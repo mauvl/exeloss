@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #b2f7ef, #80ced6);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 1000px;
+            animation: fadeIn 0.6s ease-in-out;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-custom {
+            background-color: #33b5e5;
+            color: white;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-custom:hover {
+            background-color: #0099cc;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            transition: all 0.2s;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+        }
+
+        .toggle-dark {
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            color: #33b5e5;
+            transition: all 0.2s;
+        }
+
+        .toggle-dark:hover {
+            color: #0099cc;
+            transform: scale(1.05);
+        }
+
+        .date-filter {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            color: white;
+        }
+
+        body.dark-mode .card {
+            background-color: #34495e;
+            color: white;
+        }
+
+        body.dark-mode .btn-custom {
+            background-color: #26a69a;
+        }
+
+        body.dark-mode .btn-custom:hover {
+            background-color: #1e8e82;
+        }
+
+        body.dark-mode .date-filter {
+            background-color: #3d4b5d;
+        }
+
+        body.dark-mode .list-group-item {
+            background-color: #3d4b5d;
+            color: white;
+            border-color: #4ca1af;
+        }
+
+        body.dark-mode .form-control, 
+        body.dark-mode .form-select {
+            background-color: #2c3e50;
+            color: white;
+            border-color: #4ca1af;
+        }
+
+        body.dark-mode .page-link {
+            background-color: #34495e;
+            color: white;
+            border-color: #4ca1af;
+        }
+
+        body.dark-mode .page-item.active .page-link {
+            background-color: #26a69a;
+            border-color: #26a69a;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card">
+        <h2 class="text-center mb-4">📂 History Files</h2>
+
+        <div class="date-filter mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="start-date" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="start-date">
+                </div>
+                <div class="col-md-4">
+                    <label for="end-date" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="end-date">
+                </div>
+                <div class="col-md-4">
+                    <label for="file-type" class="form-label">File Type</label>
+                    <select class="form-select" id="file-type">
+                        <option value="all">All Types</option>
+                        <option value="csv">CSV</option>
+                        <option value="xlsx">Excel</option>
+                        <option value="json">JSON</option>
+                        <option value="txt">Text</option>
+                    </select>
+                </div>
+                <div class="col-12 text-center">
+                    <button id="apply-filter" class="btn btn-custom me-2">Apply Filter</button>
+                    <button id="reset-filter" class="btn btn-outline-secondary">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="historyTable" class="table table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr data-filename="{{ file }}" data-date="{{ file.split('_')[-1].split('.')[0] }}">
+                        <td>
+                            <span class="file-icon">
+                                {% if file.endswith('.csv') %}📊
+                                {% elif file.endswith('.xlsx') %}📈
+                                {% elif file.endswith('.json') %}📄
+                                {% elif file.endswith('.txt') %}📝
+                                {% else %}📁{% endif %}
+                            </span>
+                            {{ file }}
+                        </td>
+                        <td>{{ file.split('.')[-1].upper() }}</td>
+                        <td>{{ file.split('_')[-1].split('.')[0][:8] | insert_date_separators }}</td>
+                        <td>{{ file | get_file_size }}</td>
+
+                        <td>
+                            <div class="d-flex">
+                                <a href="/results/{{ file }}" class="btn btn-sm btn-custom me-2">Download</a>
+                                <button class="btn btn-sm btn-danger delete-btn" data-filename="{{ file }}">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-4">
+            <button id="archive-month" class="btn btn-secondary me-2">🗄️ Archive This Month</button>
+            <a href="/" class="btn btn-outline-dark me-2">⬅️ Back to Upload</a>
+            <a href="/dashboard" class="btn btn-secondary">📊 Dashboard</a>
+            <button id="delete-all" class="btn btn-danger ms-2">🧹 Delete All</button>
+
+        </div>
+
+        <div class="toggle-dark text-center mt-3" onclick="toggleDarkMode()">
+            <span id="darkModeIcon">🌙</span> Toggle Dark Mode
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Initialize DataTable with date sorting
+    $(document).ready(function() {
+        // Format dates for sorting
+        $.fn.dataTable.ext.type.order['file-date-pre'] = function(data) {
+            return parseInt(data.replace(/\D/g, ''), 10);
+        };
+
+        var table = $('#historyTable').DataTable({
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            order: [[2, 'desc']], // Sort by date descending by default
+            columnDefs: [
+                { type: 'file-date', targets: 2 }, // Date column
+                { orderable: false, targets: [4] } // Actions column
+            ],
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search files...",
+                lengthMenu: "Show _MENU_ entries",
+                paginate: {
+                    previous: "←",
+                    next: "→"
+                }
+            }
+        });
+
+        // Initialize date pickers
+        flatpickr("#start-date", {
+            dateFormat: "Y-m-d",
+            maxDate: "today"
+        });
+
+        flatpickr("#end-date", {
+            dateFormat: "Y-m-d",
+            maxDate: "today"
+        });
+
+        // Apply filters
+        $('#apply-filter').click(function() {
+            var startDate = $('#start-date').val();
+            var endDate = $('#end-date').val();
+            var fileType = $('#file-type').val();
+
+            // Date filter
+            if (startDate || endDate) {
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        var fileDate = data[2].replace(/\D/g, '');
+                        var rowDate = new Date(
+                            fileDate.substring(0, 4),
+                            fileDate.substring(4, 6) - 1,
+                            fileDate.substring(6, 8)
+                        );
+                        
+                        var minDate = startDate ? new Date(startDate) : null;
+                        var maxDate = endDate ? new Date(endDate) : null;
+                        
+                        if (minDate && rowDate < minDate) return false;
+                        if (maxDate && rowDate > maxDate) return false;
+                        return true;
+                    }
+                );
+            }
+
+            // File type filter
+            if (fileType !== 'all') {
+                table.column(1).search(fileType, true, false).draw();
+            } else {
+                table.column(1).search('').draw();
+            }
+
+            table.draw();
+            $.fn.dataTable.ext.search.pop(); // Remove the filter function
+        });
+
+        // Reset filters
+        $('#reset-filter').click(function() {
+            $('#start-date').val('');
+            $('#end-date').val('');
+            $('#file-type').val('all');
+            table.columns().search('').draw();
+        });
+
+        // Delete file
+        $(document).on('click', '.delete-btn', function() {
+            var filename = $(this).data('filename');
+            
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/delete-file/' + encodeURIComponent(filename),
+                        type: 'DELETE',
+                        success: function(response) {
+                            if (response.success) {
+                                table.row($(this).parents('tr')).remove().draw();
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Your file has been deleted.',
+                                    'success'
+                                ).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire(
+                                    'Error!',
+                                    response.message || 'Could not delete file.',
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Could not delete file.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+
+        // Archive month
+        // Delete All
+$('#delete-all').click(function() {
+    Swal.fire({
+        title: 'Delete All Files?',
+        text: "This will delete all result files permanently!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete all!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/delete-all-files',
+                type: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Deleted!',
+                            'All files have been deleted.',
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Could not delete all files.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'Something went wrong.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+});
+
+        $('#archive-month').click(function() {
+            Swal.fire({
+                title: 'Archive This Month',
+                text: "This will create a ZIP archive of all files from the current month.",
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#33b5e5',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Create Archive'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/archive-month',
+                        type: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire(
+                                    'Archived!',
+                                    response.message || 'Monthly archive created successfully.',
+                                    'success'
+                                ).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire(
+                                    'Error!',
+                                    response.message || 'Could not create archive.',
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Could not create archive.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    // Dark Mode Functions
+    function checkDarkMode() {
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('darkModeIcon').textContent = '☀️';
+        }
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const icon = document.getElementById('darkModeIcon');
+        if (document.body.classList.contains('dark-mode')) {
+            localStorage.setItem('darkMode', 'enabled');
+            icon.textContent = '☀️';
+        } else {
+            localStorage.setItem('darkMode', 'disabled');
+            icon.textContent = '🌙';
+        }
+    }
+
+    // Check dark mode on page load
+    document.addEventListener('DOMContentLoaded', checkDarkMode);
+</script>
+
+<!-- Footer -->
+<footer class="footer mt-auto py-3 bg-light border-top">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6 text-center text-md-start">
+        <div class="d-inline-block me-2">
+          <a href="https://drive.google.com/uc?export=download&id=12pEOz-rVWe5je0hcAzKV3Dr3BQTa0uns" class="btn btn-link text-decoration-none p-0" download>
+            <i class="fas fa-download me-1"></i> Download CV
+          </a>
+        </div>
+        <div class="d-inline-block">
+          <a href="https://instagram.com/draamld" class="btn btn-link text-decoration-none p-0" target="_blank">
+            <i class="fab fa-instagram me-1"></i> Follow on Instagram
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+        <small class="text-muted d-block d-md-inline">
+          © 2025 Maulida. All rights reserved.
+        </small>
+        <small class="text-muted ms-md-2 d-block d-md-inline">
+          <span id="current-time"></span>
+        </small>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* Footer styling */
+  .footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    z-index: 100;
+  }
+  
+  /* Dark mode footer */
+  body.dark-mode .footer {
+    background-color: #2c3e50 !important;
+    border-color: #4ca1af !important;
+  }
+  
+  body.dark-mode .footer .text-muted {
+    color: #bdc3c7 !important;
+  }
+  
+  body.dark-mode .footer a {
+    color: #bdc3c7;
+  }
+  
+  /* Main content padding to avoid footer overlap */
+  .container.d-flex {
+    padding-bottom: 80px;
+  }
+</style>
+</body>
+</html>

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Analytics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #33b5e5;
+            --secondary: #0099cc;
+            --accent: #6c63ff;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #26a69a;
+            --info: #33b5e5;
+            --warning: #ffbb33;
+            --danger: #ff4444;
+            --card-bg: #ffffff;
+            --body-bg: #f5f7fb;
+            --text-color: #2b2d42;
+            --text-light: #8d99ae;
+        }
+
+        .dark-mode {
+            --primary: #33b5e5;
+            --secondary: #26a69a;
+            --accent: #6c63ff;
+            --light: #2b2d42;
+            --dark: #f8f9fa;
+            --success: #26a69a;
+            --info: #33b5e5;
+            --warning: #ffbb33;
+            --danger: #ff4444;
+            --card-bg: #34495e;
+            --body-bg: #2c3e50;
+            --text-color: #f8f9fa;
+            --text-light: #bdc3c7;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark-mode .card-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            color: var(--primary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 100%;
+            min-height: 300px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-col-3 {
+            grid-column: span 3;
+        }
+
+        .grid-col-4 {
+            grid-column: span 4;
+        }
+
+        .grid-col-6 {
+            grid-column: span 6;
+        }
+
+        .grid-col-8 {
+            grid-column: span 8;
+        }
+
+        .grid-col-12 {
+            grid-column: span 12;
+        }
+
+        @media (max-width: 1200px) {
+            .grid-col-3, .grid-col-4 {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-col-3, .grid-col-4, .grid-col-6, .grid-col-8 {
+                grid-column: span 12;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        .customer-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+            display: inline-block;
+        }
+
+        /* Custom tooltip style */
+        .chart-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="header animate">
+            <h1><i class="fas fa-chart-line me-2"></i>Invoice Analytics</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-outline-primary"><i class="fas fa-upload me-2"></i>Upload</a>
+                <a href="/history" class="btn btn-outline-primary"><i class="fas fa-history me-2"></i>History</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Stat Cards -->
+            <div class="grid-col-3 animate delay-1">
+                <div class="card stat-card">
+                    <div class="stat-icon"><i class="fas fa-file-invoice"></i></div>
+                    <div class="stat-value">{{ counts | sum }}</div>
+                    <div class="stat-label">Total Invoices</div>
+                </div>
+            </div>
+
+            <div class="grid-col-3 animate delay-1">
+                <div class="card stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-value">{{ labels | length }}</div>
+                    <div class="stat-label">Unique Customers</div>
+                </div>
+            </div>
+
+            <div class="grid-col-3 animate delay-1">
+                <div class="card stat-card">
+                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                    <div class="stat-value">
+                        {% if labels|length > 0 %}{{ counts[0] }}{% else %}0{% endif %}
+                    </div>
+                    <div class="stat-label">Top Customer Volume</div>
+                </div>
+            </div>
+
+            <div class="grid-col-3 animate delay-1">
+                <div class="card stat-card">
+                    <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-value">
+                        {% if labels|length > 0 %}<span class="customer-name" title="{{ labels[0] }}">{{ labels[0] }}</span>{% else %}N/A{% endif %}
+                    </div>
+                    <div class="stat-label">Top Customer</div>
+                </div>
+            </div>
+
+            <!-- Main Chart -->
+            <div class="grid-col-8 animate delay-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Customer Invoice Distribution</span>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="timeFilter" data-bs-toggle="dropdown">
+                                Last 30 Days
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
+                                <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
+                                <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
+                                <li><a class="dropdown-item" href="#">All Time</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="grid-col-4 animate delay-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Market Share by Customer</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="grid-col-6 animate delay-3">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Top 10 Customers</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="grid-col-6 animate delay-3">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Recent Activity</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-list">
+                            {% if labels|length > 0 %}
+                                {% for i in range(0, limit) %}
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-0"><span class="customer-name" title="{{ labels[i] }}">{{ labels[i] }}</span></h6>
+                                            <small class="text-muted">{{ counts[i] }} invoices</small>
+                                        </div>
+                                        <div class="badge bg-primary rounded-pill">
+                                            {% if counts[i] == counts|max %}
+                                                <i class="fas fa-crown me-1"></i>
+                                            {% endif %}
+                                            {{ ((counts[i] / counts|sum) * 100)|round(1) }}%
+                                        </div>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" 
+                                             style="width: {{ ((counts[i] / counts|sum) * 100)|round(1) }}%"
+                                             role="progressbar"></div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+                                    <p class="text-muted">No activity data available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Data Embed -->
+    <div id="chart-data"
+        data-labels='{{ labels | tojson | safe }}'
+        data-counts='{{ counts | tojson | safe }}'
+        style="display:none;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const icon = themeToggle.querySelector('i');
+        
+        function setTheme(isDark) {
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                icon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                icon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            setTheme(true);
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const isDark = !document.body.classList.contains('dark-mode');
+            setTheme(isDark);
+        });
+
+        // Chart setup
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get data from data-attributes
+            const dataDiv = document.getElementById('chart-data');
+            const labels = JSON.parse(dataDiv.dataset.labels);
+            const counts = JSON.parse(dataDiv.dataset.counts);
+            
+            // Generate colors based on the new theme
+            const generateColors = (count) => {
+                const colors = [];
+                const baseColors = [
+                    '#33b5e5', '#6c63ff', '#26a69a', '#ffbb33', 
+                    '#ff4444', '#4285F4', '#34A853', '#EA4335', 
+                    '#FBBC05', '#673AB7', '#E91E63', '#009688'
+                ];
+                
+                for (let i = 0; i < count; i++) {
+                    colors.push(baseColors[i % baseColors.length]);
+                }
+                return colors;
+            };
+            
+            const colors = generateColors(labels.length);
+            
+            // Format labels to show full name on hover
+            const formatLabel = (label) => {
+                if (label.length > 15) {
+                    return label.substring(0, 12) + '...';
+                }
+                return label;
+            };
+            
+            // Create a tooltip element
+            const tooltip = document.createElement('div');
+            tooltip.classList.add('chart-tooltip');
+            document.body.appendChild(tooltip);
+            
+            // Main Chart (Line)
+            new Chart(document.getElementById('mainChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels.map(formatLabel),
+                    datasets: [{
+                        label: 'Invoices per Customer',
+                        data: counts,
+                        backgroundColor: 'rgba(51, 181, 229, 0.1)',
+                        borderColor: 'rgba(51, 181, 229, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(51, 181, 229, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return labels[context.dataIndex] + ': ' + context.raw + ' invoices';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'var(--text-color)',
+                                callback: function(value, index, values) {
+                                    return formatLabel(labels[index]);
+                                }
+                            }
+                        }
+                    },
+                    onHover: (event, chartElement) => {
+                        if (chartElement.length > 0) {
+                            const index = chartElement[0].index;
+                            tooltip.innerHTML = labels[index];
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (event.x + 10) + 'px';
+                            tooltip.style.top = (event.y + 10) + 'px';
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                    }
+                }
+            });
+            
+            // Pie Chart
+            new Chart(document.getElementById('pieChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(formatLabel),
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.raw;
+                                    const percentage = Math.round((value / total) * 100);
+                                    return labels[context.dataIndex] + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
+                        },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = (value * 100 / total).toFixed(1);
+                                return percentage > 5 ? `${percentage}%` : '';
+                            },
+                            color: '#fff',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                    onHover: (event, chartElement) => {
+                        if (chartElement.length > 0) {
+                            const index = chartElement[0].index;
+                            tooltip.innerHTML = labels[index];
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (event.x + 10) + 'px';
+                            tooltip.style.top = (event.y + 10) + 'px';
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+            
+            // Bar Chart (Top 10 Customers)
+            const topCount = Math.min(10, labels.length);
+            const topLabels = labels.slice(0, topCount);
+            const topCounts = counts.slice(0, topCount);
+            const topColors = colors.slice(0, topCount);
+            
+            new Chart(document.getElementById('barChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: topLabels.map(formatLabel),
+                    datasets: [{
+                        label: 'Invoices',
+                        data: topCounts,
+                        backgroundColor: topColors,
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return topLabels[context.dataIndex] + ': ' + context.raw + ' invoices';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'var(--text-color)',
+                                callback: function(value, index, values) {
+                                    return formatLabel(topLabels[index]);
+                                }
+                            }
+                        }
+                    },
+                    onHover: (event, chartElement) => {
+                        if (chartElement.length > 0) {
+                            const index = chartElement[0].index;
+                            tooltip.innerHTML = topLabels[index];
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (event.x + 10) + 'px';
+                            tooltip.style.top = (event.y + 10) + 'px';
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                    }
+                }
+            });
+            
+            // Dark mode adjustments for charts
+            const darkModeObserver = new MutationObserver(() => {
+                const isDark = document.body.classList.contains('dark-mode');
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                const textColor = isDark ? 'var(--text-color)' : 'var(--text-color)';
+                
+                // Update all charts
+                const charts = ['mainChart', 'pieChart', 'barChart'];
+                charts.forEach(chartId => {
+                    const chart = Chart.getChart(chartId);
+                    if (chart) {
+                        // Update scales
+                        if (chart.options.scales) {
+                            Object.values(chart.options.scales).forEach(scale => {
+                                if (scale.ticks) {
+                                    scale.ticks.color = textColor;
+                                }
+                                if (scale.grid) {
+                                    scale.grid.color = gridColor;
+                                }
+                            });
+                        }
+                        
+                        // Update legend
+                        if (chart.options.plugins && chart.options.plugins.legend) {
+                            chart.options.plugins.legend.labels.color = textColor;
+                        }
+                        
+                        chart.update();
+                    }
+                });
+            });
+            
+            darkModeObserver.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        });
+    </script>
+
+<!-- Footer -->
+<footer class="footer mt-auto py-3 bg-light border-top">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6 text-center text-md-start">
+        <div class="d-inline-block me-2">
+          <a href="https://drive.google.com/uc?export=download&id=12pEOz-rVWe5je0hcAzKV3Dr3BQTa0uns" class="btn btn-link text-decoration-none p-0" download>
+            <i class="fas fa-download me-1"></i> Download CV
+          </a>
+        </div>
+        <div class="d-inline-block">
+          <a href="https://instagram.com/draamld" class="btn btn-link text-decoration-none p-0" target="_blank">
+            <i class="fab fa-instagram me-1"></i> Follow on Instagram
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+        <small class="text-muted d-block d-md-inline">
+          © 2025 Maulida. All rights reserved.
+        </small>
+        <small class="text-muted ms-md-2 d-block d-md-inline">
+          <span id="current-time"></span>
+        </small>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* Footer styling */
+  .footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    z-index: 100;
+  }
+  
+  /* Dark mode footer */
+  body.dark-mode .footer {
+    background-color: #2c3e50 !important;
+    border-color: #4ca1af !important;
+  }
+  
+  body.dark-mode .footer .text-muted {
+    color: #bdc3c7 !important;
+  }
+  
+  body.dark-mode .footer a {
+    color: #bdc3c7;
+  }
+  
+  /* Main content padding to avoid footer overlap */
+  .dashboard-container {
+    padding-bottom: 80px;
+  }
+</style>
+</body>
+
+</html>
